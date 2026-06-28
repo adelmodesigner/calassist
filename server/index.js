@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 import authRouter from './routes/auth.js';
@@ -28,9 +29,9 @@ app.use('/api/webhooks', webhooksRouter);
 // Health check (Railway uses this)
 app.get('/api/health', (_, res) => res.json({ ok: true }));
 
-// Serve React build in production
-if (isProd) {
-  const distPath = path.join(__dirname, '../dist');
+// Serve React build when dist exists (production)
+const distPath = path.join(__dirname, '../dist');
+if (existsSync(distPath)) {
   app.use(express.static(distPath));
   app.get('*', (_, res) => res.sendFile(path.join(distPath, 'index.html')));
 }
