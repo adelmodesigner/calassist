@@ -5,7 +5,14 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../data.db');
 
-const db = new Database(DB_PATH);
+let db;
+try {
+  db = new Database(DB_PATH);
+} catch (err) {
+  console.warn(`Failed to open DB at ${DB_PATH}, falling back to local:`, err.message);
+  db = new Database(path.join(__dirname, '../data.db'));
+}
+
 db.pragma('journal_mode = WAL');
 
 db.exec(`
