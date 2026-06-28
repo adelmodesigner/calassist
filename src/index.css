@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* Desktop: gray canvas behind the phone frame */
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100svh;
+  padding: 16px;
+  background: #e8e7e4;
+}
+
+/* Mobile: go full-screen, no canvas */
+@media (max-width: 480px) {
+  body {
+    background: #f1f0ee;
+  }
+  #root {
+    padding: 0;
+    min-height: 100dvh;
+    background: #f1f0ee;
+    align-items: stretch;
+  }
+}
