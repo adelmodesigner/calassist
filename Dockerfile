@@ -1,8 +1,8 @@
-FROM node:18-bullseye-slim
+FROM node:18-bullseye
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y python3 build-essential && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends python3 && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm install
