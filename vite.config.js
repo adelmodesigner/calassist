@@ -44,6 +44,9 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    minify: 'esbuild',
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:3001',
