@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
-    "better-sqlite3": "^12.11.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -23,22 +22,21 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "recharts": "^3.9.0",
+    "sql.js": "^1.14.1",
     "twilio": "^6.0.2"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.49",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
     "concurrently": "^10.0.3",
     "nodemon": "^3.1.14",
     "oxlint": "^1.69.0",
+    "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "vite": "^5.4.11",
     "vite-plugin-pwa": "^0.21.1"
   },
-  "allowScripts": {
-    "better-sqlite3@12.11.1": true
-  }
+  "allowScripts": {}
 }
