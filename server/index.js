@@ -52,7 +52,9 @@ try {
 const distPath = path.join(__dirname, '../dist');
 if (existsSync(distPath)) {
   app.use(express.static(distPath));
-  // Express 5 dropped support for the bare '*' wildcard — use app.use as catch-all instead
+  // Unknown /api/* routes → JSON 404 (must come before SPA catch-all)
+  app.use('/api', (_, res) => res.status(404).json({ error: 'not_found' }));
+  // Express 5 dropped the bare '*' wildcard — use app.use as SPA catch-all instead
   app.use((_, res) => res.sendFile(path.join(distPath, 'index.html')));
   console.log('Serving frontend from', distPath);
 } else {
