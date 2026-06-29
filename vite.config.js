@@ -29,6 +29,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // Don't intercept /api/* navigations — let server redirects (e.g. OAuth) go through
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
             // API calls: always try network, fall back to cache for GET
