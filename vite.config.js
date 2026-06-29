@@ -33,8 +33,9 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
-            // API calls: always try network, fall back to cache for GET
-            urlPattern: /^\/api\//,
+            // API fetch calls only — exclude navigate mode so OAuth redirects aren't intercepted
+            urlPattern: ({ request, url }) =>
+              url.pathname.startsWith('/api/') && request.mode !== 'navigate',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
