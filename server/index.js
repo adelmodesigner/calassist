@@ -1,3 +1,11 @@
+// Prevent crash from any unhandled error — log it instead so we can diagnose
+process.on('uncaughtException', (err) => {
+  console.error('[CRASH] uncaughtException:', err?.message, '\n', err?.stack);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[CRASH] unhandledRejection:', reason?.message ?? reason);
+});
+
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
