@@ -34,13 +34,21 @@ router.post('/text', async (req, res) => {
   }
 });
 
+const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
 // Image capture
 router.post('/image', upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'image file is required' });
 
+  const mediaType = req.file.mimetype || 'image/jpeg';
+  if (!SUPPORTED_IMAGE_TYPES.includes(mediaType)) {
+    return res.status(400).json({
+      error: `Unsupported format: ${mediaType}. Please use JPEG, PNG, GIF, or WebP. On iPhone, try taking a screenshot instead of uploading directly from the camera roll.`,
+    });
+  }
+
   try {
     const base64 = req.file.buffer.toString('base64');
-    const mediaType = req.file.mimetype || 'image/jpeg';
     const fields = await extractFromImage(base64, mediaType);
     const id = saveEvent(fields, 'image');
     res.json({ id, fields });

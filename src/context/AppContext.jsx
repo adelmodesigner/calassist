@@ -28,8 +28,9 @@ export function AppProvider({ children }) {
   }, [fetchEvents]);
 
   async function approveEvent(id) {
-    await api.approveEvent(id);
+    const result = await api.approveEvent(id);
     await fetchEvents();
+    return result; // caller can check result.warning
   }
 
   async function rejectEvent(id) {

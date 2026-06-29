@@ -145,7 +145,7 @@ export default function Capture() {
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/gif,image/webp"
               className="hidden"
               onChange={e => handleFileSelect(e.target.files?.[0])}
             />

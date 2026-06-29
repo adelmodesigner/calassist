@@ -34,11 +34,35 @@ function EventModal({ event, onClose }) {
     location: event.location,
     description: event.description,
   });
+  const [approving, setApproving] = useState(false);
+  const [warning, setWarning] = useState(null);
 
-  function handleApprove() {
-    if (editing) updateEvent(event.id, fields);
-    approveEvent(event.id);
-    onClose();
+  // Require at least a date before allowing approval
+  const effectiveDate = editing ? fields.date : event.date;
+  const canApprove = !!effectiveDate?.trim();
+
+  async function handleApprove() {
+    if (!canApprove || approving) return;
+    setApproving(true);
+    setWarning(null);
+    try {
+      if (editing) await updateEvent(event.id, fields);
+      const result = await approveEvent(event.id);
+      if (result?.warning) {
+        const isAuthErr = result.warning.includes('not_authenticated');
+        setWarning(
+          isAuthErr
+            ? 'Saved locally, but not synced to Google Calendar — please sign in again.'
+            : `Saved locally, but calendar sync failed: ${result.warning.replace('Calendar sync failed: ', '')}`
+        );
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      setWarning('Approval failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setApproving(false);
+    }
   }
 
   function handleReject() {
@@ -135,6 +159,19 @@ function EventModal({ event, onClose }) {
           )}
         </div>
 
+        {/* Calendar sync warning */}
+        {warning && (
+          <div className="mx-5 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">
+            ⚠️ {warning}
+            {warning.includes('sign in') && (
+              <a href="/api/auth/google" className="block mt-1.5 font-semibold text-violet-600 underline">
+                Sign in with Google →
+              </a>
+            )}
+            <button onClick={onClose} className="block mt-1.5 text-gray-500 underline">Close</button>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="px-5 pb-6 pt-2 flex gap-2">
           <button
@@ -151,9 +188,13 @@ function EventModal({ event, onClose }) {
           </button>
           <button
             onClick={handleApprove}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition"
+            disabled={!canApprove || approving}
+            title={!canApprove ? 'Edit the event to add a date first' : undefined}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Check size={15} /> Approve
+            {approving
+              ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Syncing…</>
+              : <><Check size={15} /> Approve</>}
           </button>
         </div>
       </div>

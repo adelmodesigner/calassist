@@ -4,7 +4,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../data.db');
+
+// Prefer the Railway persistent volume if mounted, then env var, then local fallback
+const DB_PATH = existsSync('/data')
+  ? '/data/events.db'
+  : (process.env.DB_PATH || path.join(__dirname, '../data.db'));
+
+console.log('DB path:', DB_PATH);
 
 const SQL = await initSqlJs();
 
