@@ -52,7 +52,8 @@ try {
 const distPath = path.join(__dirname, '../dist');
 if (existsSync(distPath)) {
   app.use(express.static(distPath));
-  app.get('*', (_, res) => res.sendFile(path.join(distPath, 'index.html')));
+  // Express 5 dropped support for the bare '*' wildcard — use app.use as catch-all instead
+  app.use((_, res) => res.sendFile(path.join(distPath, 'index.html')));
   console.log('Serving frontend from', distPath);
 } else {
   console.warn('No dist/ folder found — frontend not served');
