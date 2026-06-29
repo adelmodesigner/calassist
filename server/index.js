@@ -1,41 +1,51 @@
 import 'dotenv/config';
 import express from 'express';
-import cors from 'cors';
 import path from 'path';
 import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 
-import authRouter from './routes/auth.js';
-import eventsRouter from './routes/events.js';
-import captureRouter from './routes/capture.js';
-import webhooksRouter from './routes/webhooks.js';
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
-const isProd = process.env.NODE_ENV === 'production';
-
 const app = express();
 
-app.use(cors({ origin: isProd ? false : 'http://localhost:5173' }));
-app.use(express.json());
-// Twilio sends form-encoded bodies for webhooks
-app.use('/api/webhooks', express.urlencoded({ extended: false }));
-
-app.use('/api/auth', authRouter);
-app.use('/api/events', eventsRouter);
-app.use('/api/capture', captureRouter);
-app.use('/api/webhooks', webhooksRouter);
-
-// Health check (Railway uses this)
+// Health endpoint registered FIRST before any risky imports
 app.get('/api/health', (_, res) => res.json({ ok: true }));
 
-// Serve React build when dist exists (production)
+// Start listening immediately so healthcheck always passes
+app.listen(PORT, () => {
+  console.log(`Server on port ${PORT} (NODE_ENV=${process.env.NODE_ENV || 'unset'})`);
+});
+
+// Load everything else with dynamic imports so a crash here doesn't kill the process
+try {
+  const { default: cors } = await import('cors');
+  app.use(cors({ origin: process.env.NODE_ENV === 'production' ? false : 'http://localhost:5173' }));
+  app.use(express.json());
+  app.use('/api/webhooks', express.urlencoded({ extended: false }));
+
+  const [authRouter, eventsRouter, captureRouter, webhooksRouter] = await Promise.all([
+    import('./routes/auth.js').then(m => m.default),
+    import('./routes/events.js').then(m => m.default),
+    import('./routes/capture.js').then(m => m.default),
+    import('./routes/webhooks.js').then(m => m.default),
+  ]);
+
+  app.use('/api/auth', authRouter);
+  app.use('/api/events', eventsRouter);
+  app.use('/api/capture', captureRouter);
+  app.use('/api/webhooks', webhooksRouter);
+
+  console.log('All routes loaded OK');
+} catch (err) {
+  console.error('Route setup failed:', err.message, '\n', err.stack);
+}
+
+// Serve frontend build
 const distPath = path.join(__dirname, '../dist');
 if (existsSync(distPath)) {
   app.use(express.static(distPath));
   app.get('*', (_, res) => res.sendFile(path.join(distPath, 'index.html')));
+  console.log('Serving frontend from', distPath);
+} else {
+  console.warn('No dist/ folder found — frontend not served');
 }
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} (${isProd ? 'production' : 'development'})`);
-});
