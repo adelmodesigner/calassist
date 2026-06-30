@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { getAuthUrl, storeTokens, isAuthenticated } from '../services/calendar.js';
+import { getAuthUrl, storeTokens, isAuthenticated, clearTokens } from '../services/calendar.js';
 import { google } from 'googleapis';
 
 const router = Router();
@@ -37,6 +37,11 @@ router.get('/callback', async (req, res) => {
     console.error('OAuth callback error:', err);
     res.status(500).send('Authentication failed. Check server logs.');
   }
+});
+
+router.post('/logout', (req, res) => {
+  clearTokens();
+  res.json({ ok: true });
 });
 
 export default router;

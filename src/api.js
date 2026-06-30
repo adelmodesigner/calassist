@@ -20,6 +20,14 @@ export const api = {
     return handleResponse(res);
   },
 
+  async logout() {
+    const res = await fetch(`${BASE}/auth/logout`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    return handleResponse(res);
+  },
+
   async getEvents() {
     const res = await fetch(`${BASE}/events`, { headers: authHeaders() });
     return handleResponse(res);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Calendar, MessageSquare, Bell, ChevronRight, WifiOff, Wifi } from 'lucide-react';
+import { Calendar, MessageSquare, Bell, ChevronRight, WifiOff, Wifi, LogOut } from 'lucide-react';
+import { api } from '../api';
 
 function SettingsGroup({ title, children }) {
   return (
@@ -45,6 +46,16 @@ function Toggle({ value, onChange }) {
 export default function Profile() {
   const [whatsappConnected, setWhatsappConnected] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+
+  async function handleLogout() {
+    if (!confirmLogout) { setConfirmLogout(true); return; }
+    setSigningOut(true);
+    try { await api.logout(); } catch (_) {}
+    localStorage.removeItem('auth_token');
+    window.location.href = '/';
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -125,6 +136,22 @@ export default function Profile() {
           >
             <span className="text-xs text-gray-400">0.1.0</span>
           </SettingsRow>
+        </SettingsGroup>
+
+        <SettingsGroup title="Account">
+          <button
+            onClick={handleLogout}
+            disabled={signingOut}
+            onBlur={() => setConfirmLogout(false)}
+            className="w-full flex items-center px-4 py-3.5 gap-3 disabled:opacity-50"
+          >
+            <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+              <LogOut size={16} />
+            </div>
+            <span className="flex-1 text-left text-sm font-medium text-red-500">
+              {signingOut ? 'Signing out…' : confirmLogout ? 'Tap again to confirm' : 'Sign out'}
+            </span>
+          </button>
         </SettingsGroup>
 
         {/* WhatsApp status banner */}

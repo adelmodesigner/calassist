@@ -37,6 +37,10 @@ export function isAuthenticated() {
   return !!row?.google_refresh_token;
 }
 
+export function clearTokens() {
+  db.prepare('DELETE FROM auth_tokens WHERE id = 1').run();
+}
+
 async function getAuthedClient() {
   const tokens = db.prepare('SELECT * FROM auth_tokens WHERE id = 1').get();
   if (!tokens?.google_refresh_token) throw new Error('not_authenticated');
