@@ -2,14 +2,18 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const EXTRACT_PROMPT = `Extract event details from the input and return ONLY a JSON object with these exact keys:
+function buildExtractPrompt() {
+  const today = new Date().toISOString().slice(0, 10);
+  return `Today's date is ${today}. Extract event details from the input and return ONLY a JSON object with these exact keys:
 - title (string, the event name)
 - date (string, YYYY-MM-DD format, or "" if not found)
 - time (string, HH:MM 24h format, or "" if not found)
 - location (string, venue or address, or "")
 - description (string, 1-2 sentence summary of the event)
 
+If the source mentions a date without a year, assume the current year (${today.slice(0, 4)}) unless that would place the event in the past, in which case use the next year.
 Return ONLY the JSON object. No markdown, no explanation, no code fences.`;
+}
 
 export async function extractFromText(text) {
   const msg = await client.messages.create({
@@ -17,7 +21,7 @@ export async function extractFromText(text) {
     max_tokens: 512,
     messages: [{
       role: 'user',
-      content: `${EXTRACT_PROMPT}\n\nText to extract from:\n${text}`,
+      content: `${buildExtractPrompt()}\n\nText to extract from:\n${text}`,
     }],
   });
 
@@ -37,7 +41,7 @@ export async function extractFromImage(base64Data, mediaType) {
         },
         {
           type: 'text',
-          text: `This is an event flyer, invitation, or screenshot. ${EXTRACT_PROMPT}`,
+          text: `This is an event flyer, invitation, or screenshot. ${buildExtractPrompt()}`,
         },
       ],
     }],
