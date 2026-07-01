@@ -16,7 +16,7 @@ const SOURCE_ICONS = {
   ),
 };
 
-const SOURCE_LABEL = { text: 'Text', image: 'Image', audio: 'Audio', whatsapp: 'WhatsApp' };
+const SOURCE_LABEL = { text: 'Text', image: 'Image', audio: 'Audio', whatsapp: 'WhatsApp', google_calendar: 'Calendar' };
 
 function formatDate(dateStr) {
   if (!dateStr) return null;
@@ -252,7 +252,8 @@ function PendingCard({ event, onTap }) {
 }
 
 function ApprovedCard({ event }) {
-  const today = new Date('2026-06-27');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const eventDate = new Date(`${event.date}T${event.time || '00:00'}`);
   const diffDays = Math.ceil((eventDate - today) / 86400000);
   const soon = diffDays >= 0 && diffDays <= 2;
@@ -314,7 +315,9 @@ export default function Home() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-5 pt-6 pb-3">
-        <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">Saturday, 27 Jun</p>
+        <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">
+          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
+        </p>
         <h1 className="text-2xl font-bold text-gray-900">My Events</h1>
       </div>
 

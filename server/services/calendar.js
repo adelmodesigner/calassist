@@ -110,7 +110,7 @@ export async function createCalendarEvent(event) {
   const auth = await getAuthedClient();
   const cal = google.calendar({ version: 'v3', auth });
 
-  const tz = 'Europe/Lisbon';
+  const tz = 'Europe/London';
   const hasTime = !!event.time?.trim();
   const startStr = hasTime ? `${event.date}T${event.time}:00` : event.date;
   // Google Calendar all-day events need end = day after start (exclusive end)
