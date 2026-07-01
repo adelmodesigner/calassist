@@ -36,6 +36,7 @@ function EventModal({ event, onClose }) {
   });
   const [approving, setApproving] = useState(false);
   const [warning, setWarning] = useState(null);
+  const [calLink, setCalLink] = useState(null);
 
   // Require at least a date before allowing approval
   const effectiveDate = editing ? fields.date : event.date;
@@ -56,7 +57,8 @@ function EventModal({ event, onClose }) {
             : `Saved locally, but calendar sync failed: ${result.warning.replace('Calendar sync failed: ', '')}`
         );
       } else {
-        onClose();
+        if (result?.htmlLink) setCalLink(result.htmlLink);
+        else onClose();
       }
     } catch (err) {
       setWarning('Approval failed: ' + (err.message || 'Unknown error'));
@@ -158,6 +160,17 @@ function EventModal({ event, onClose }) {
             </div>
           )}
         </div>
+
+        {/* Calendar sync success */}
+        {calLink && (
+          <div className="mx-5 mb-3 p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 leading-relaxed">
+            ✅ Added to Google Calendar!
+            <a href={calLink} target="_blank" rel="noreferrer" className="block mt-1.5 font-semibold text-violet-600 underline">
+              View event in Google Calendar →
+            </a>
+            <button onClick={onClose} className="block mt-1.5 text-gray-500 underline">Close</button>
+          </div>
+        )}
 
         {/* Calendar sync warning */}
         {warning && (

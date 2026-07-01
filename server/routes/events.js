@@ -46,13 +46,13 @@ router.post('/:id/approve', async (req, res) => {
   if (!event) return res.status(404).json({ error: 'not_found' });
 
   try {
-    const googleEventId = await createCalendarEvent(event);
+    const { id: googleEventId, htmlLink } = await createCalendarEvent(event);
     db.prepare(
       "UPDATE events SET status = 'approved', google_event_id = ? WHERE id = ?"
     ).run(googleEventId, event.id);
-    res.json({ ok: true, googleEventId });
+    res.json({ ok: true, googleEventId, htmlLink });
   } catch (err) {
-    console.error('Approve error:', err);
+    console.error('[Approve] calendar sync failed:', err.message);
     // Still mark approved locally even if calendar push fails
     db.prepare("UPDATE events SET status = 'approved' WHERE id = ?").run(event.id);
     res.json({ ok: true, warning: 'Calendar sync failed: ' + err.message });

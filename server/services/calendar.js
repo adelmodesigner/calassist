@@ -88,20 +88,27 @@ export async function listUpcomingEvents() {
 }
 
 export async function createCalendarEvent(event) {
+  if (!event.date) throw new Error('event has no date — fill in a date before approving');
+
   const auth = await getAuthedClient();
   const cal = google.calendar({ version: 'v3', auth });
 
   const tz = 'Europe/Lisbon';
-  const hasTime = !!event.time;
+  const hasTime = !!event.time?.trim();
   const startStr = hasTime ? `${event.date}T${event.time}:00` : event.date;
+  // Google Calendar all-day events need end = day after start (exclusive end)
   const endStr = hasTime
     ? `${event.date}T${bumpHour(event.time)}:00`
-    : event.date;
+    : bumpDate(event.date);
+
+  console.log('[Calendar] creating event:', {
+    title: event.title, date: event.date, time: event.time || '(all-day)', tz,
+  });
 
   const { data } = await cal.events.insert({
     calendarId: 'primary',
     resource: {
-      summary: event.title,
+      summary: event.title || '(No title)',
       location: event.location || undefined,
       description: event.description || undefined,
       start: hasTime ? { dateTime: startStr, timeZone: tz } : { date: startStr },
@@ -109,10 +116,17 @@ export async function createCalendarEvent(event) {
     },
   });
 
-  return data.id;
+  console.log('[Calendar] created:', { id: data.id, link: data.htmlLink });
+  return { id: data.id, htmlLink: data.htmlLink };
 }
 
 function bumpHour(time) {
   const [h, m] = time.split(':').map(Number);
   return `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function bumpDate(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
 }
