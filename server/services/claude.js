@@ -15,6 +15,21 @@ If the source mentions a date without a year, assume the current year (${today.s
 Return ONLY the JSON object. No markdown, no explanation, no code fences.`;
 }
 
+// If Claude extracted a past date (e.g. year omitted from source), bump to current/next year
+function correctYear(dateStr) {
+  if (!dateStr) return dateStr;
+  const d = new Date(`${dateStr}T12:00:00Z`);
+  if (isNaN(d.getTime())) return dateStr;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (d < today) {
+    d.setFullYear(today.getFullYear());
+    if (d < today) d.setFullYear(today.getFullYear() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+  return dateStr;
+}
+
 export async function extractFromText(text) {
   const msg = await client.messages.create({
     model: 'claude-sonnet-4-6',
@@ -25,7 +40,8 @@ export async function extractFromText(text) {
     }],
   });
 
-  return JSON.parse(msg.content[0].text.trim());
+  const fields = JSON.parse(msg.content[0].text.trim());
+  return { ...fields, date: correctYear(fields.date) };
 }
 
 export async function extractFromImage(base64Data, mediaType) {
@@ -47,7 +63,8 @@ export async function extractFromImage(base64Data, mediaType) {
     }],
   });
 
-  return JSON.parse(msg.content[0].text.trim());
+  const fields = JSON.parse(msg.content[0].text.trim());
+  return { ...fields, date: correctYear(fields.date) };
 }
 
 export async function extractFromWhatsApp(text, imageUrl = null) {

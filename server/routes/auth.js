@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { getAuthUrl, storeTokens, isAuthenticated, clearTokens } from '../services/calendar.js';
+import { getAuthUrl, storeTokens, isAuthenticated, clearTokens, storeUserEmail } from '../services/calendar.js';
 import { google } from 'googleapis';
 
 const router = Router();
@@ -25,6 +25,18 @@ router.get('/callback', async (req, res) => {
     );
     const { tokens } = await oauth2.getToken(code);
     storeTokens(tokens);
+
+    // Fetch and store the user's email for later use (email notifications)
+    try {
+      const infoRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      });
+      const { email } = await infoRes.json();
+      if (email) storeUserEmail(email);
+      console.log('Stored user email:', email);
+    } catch (e) {
+      console.warn('Could not fetch user email:', e.message);
+    }
 
     const token = jwt.sign({ authenticated: true }, process.env.JWT_SECRET, {
       expiresIn: '90d',

@@ -58,11 +58,11 @@ export const api = {
     return handleResponse(res);
   },
 
-  async captureText(text) {
+  async captureText(text, source = 'text') {
     const res = await fetch(`${BASE}/capture/text`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, source }),
     });
     return handleResponse(res);
   },

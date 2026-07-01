@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../api';
 import { MessageSquare, Image, Mic, Send, Upload, Square, Check, AlertCircle } from 'lucide-react';
@@ -19,8 +19,12 @@ export default function Capture() {
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [imageName, setImageName] = useState(null);
+  const [liveTranscript, setLiveTranscript] = useState('');
   const timerRef = useRef(null);
   const fileRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const finalTranscriptRef = useRef('');
+  const hasSpeechAPI = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
   function resetStatus() { setDone(false); setErr(null); }
 
@@ -56,19 +60,67 @@ export default function Capture() {
     });
   }
 
+  function startSpeechRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    finalTranscriptRef.current = '';
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = navigator.language || 'en-US';
+    rec.onresult = (e) => {
+      let interim = '';
+      let final = '';
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + ' ';
+        else interim += e.results[i][0].transcript;
+      }
+      finalTranscriptRef.current = final.trim();
+      setLiveTranscript((final + interim).trim());
+    };
+    rec.onerror = (e) => console.warn('Speech error:', e.error);
+    // iOS Safari stops after a pause — restart automatically while still recording
+    rec.onend = () => {
+      if (recognitionRef.current === rec) {
+        try { rec.start(); } catch (_) {}
+      }
+    };
+    rec.start();
+    recognitionRef.current = rec;
+  }
+
+  function stopSpeechRecognition() {
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null; // prevent auto-restart
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+  }
+
   function toggleRecord() {
     if (loading) return;
     if (recording) {
       clearInterval(timerRef.current);
       const secs = recordSeconds;
+      stopSpeechRecognition();
+      const captured = finalTranscriptRef.current.trim();
+      finalTranscriptRef.current = '';
+      setLiveTranscript('');
       setRecording(false);
       setRecordSeconds(0);
-      const duration = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
-      withLoading(() => api.captureAudio(duration));
+      if (captured) {
+        withLoading(() => api.captureText(captured, 'audio'));
+      } else {
+        const duration = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+        withLoading(() => api.captureAudio(duration));
+      }
     } else {
+      finalTranscriptRef.current = '';
+      setLiveTranscript('');
       setRecording(true);
       setRecordSeconds(0);
       timerRef.current = setInterval(() => setRecordSeconds(s => s + 1), 1000);
+      startSpeechRecognition();
     }
   }
 
@@ -189,18 +241,29 @@ export default function Capture() {
               </button>
               {recording && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />}
             </div>
-            <div className="text-center">
+            <div className="text-center w-full px-2">
               {loading ? (
-                <p className="text-sm font-medium text-violet-600">Creating voice note draft…</p>
+                <p className="text-sm font-medium text-violet-600">Transcribing and extracting event…</p>
               ) : recording ? (
                 <>
                   <p className="text-2xl font-mono font-bold text-gray-900">{recordDisplay}</p>
-                  <p className="text-xs text-gray-400 mt-1">Recording… tap to stop</p>
+                  <p className="text-xs text-gray-400 mt-1">Tap to stop</p>
+                  {liveTranscript ? (
+                    <p className="mt-3 text-xs text-gray-600 bg-gray-50 rounded-xl px-3 py-2 text-left leading-relaxed">
+                      {liveTranscript}
+                    </p>
+                  ) : (
+                    <p className="mt-3 text-xs text-gray-400 italic">Listening…</p>
+                  )}
                 </>
               ) : (
                 <>
                   <p className="text-sm font-medium text-gray-700">Tap to start recording</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Voice notes need manual review</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {hasSpeechAPI
+                      ? 'Your speech will be transcribed and event details extracted automatically'
+                      : 'Transcription not supported in this browser — a blank draft will be created'}
+                  </p>
                 </>
               )}
             </div>

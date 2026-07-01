@@ -21,12 +21,12 @@ function saveEvent(fields, source) {
 
 // Text capture
 router.post('/text', async (req, res) => {
-  const { text } = req.body;
+  const { text, source = 'text' } = req.body;
   if (!text?.trim()) return res.status(400).json({ error: 'text is required' });
 
   try {
     const fields = await extractFromText(text);
-    const id = saveEvent(fields, 'text');
+    const id = saveEvent(fields, source);
     res.json({ id, fields });
   } catch (err) {
     console.error('Text extract error:', err);

@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import db from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
-import { listUpcomingEvents, createCalendarEvent } from '../services/calendar.js';
+import { listUpcomingEvents, createCalendarEvent, getUserEmail, getAuthedClientExported } from '../services/calendar.js';
+import { sendEventConfirmation } from '../services/gmail.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -50,6 +51,15 @@ router.post('/:id/approve', async (req, res) => {
     db.prepare(
       "UPDATE events SET status = 'approved', google_event_id = ? WHERE id = ?"
     ).run(googleEventId, event.id);
+
+    // Send email confirmation (requires gmail.send scope — silently skip if not available)
+    const userEmail = getUserEmail();
+    if (userEmail) {
+      getAuthedClientExported().then(auth =>
+        sendEventConfirmation(auth, userEmail, event, htmlLink)
+      ).catch(e => console.warn('[Gmail] email skipped:', e.message));
+    }
+
     res.json({ ok: true, googleEventId, htmlLink });
   } catch (err) {
     console.error('[Approve] calendar sync failed:', err.message);

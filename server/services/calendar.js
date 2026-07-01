@@ -11,7 +11,11 @@ export function getAuthUrl() {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
-    scope: ['https://www.googleapis.com/auth/calendar'],
+    scope: [
+      'https://www.googleapis.com/auth/calendar',
+      'https://www.googleapis.com/auth/gmail.send',
+      'https://www.googleapis.com/auth/userinfo.email',
+    ],
   });
 }
 
@@ -39,6 +43,19 @@ export function isAuthenticated() {
 
 export function clearTokens() {
   db.prepare('DELETE FROM auth_tokens WHERE id = 1').run();
+}
+
+export function storeUserEmail(email) {
+  db.prepare('UPDATE auth_tokens SET user_email = ? WHERE id = 1').run(email);
+}
+
+export function getUserEmail() {
+  const row = db.prepare('SELECT user_email FROM auth_tokens WHERE id = 1').get();
+  return row?.user_email || null;
+}
+
+export function getAuthedClientExported() {
+  return getAuthedClient();
 }
 
 async function getAuthedClient() {

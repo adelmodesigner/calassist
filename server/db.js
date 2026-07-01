@@ -53,8 +53,12 @@ sqlDb.run(`CREATE TABLE IF NOT EXISTS auth_tokens (
   google_access_token TEXT,
   google_refresh_token TEXT,
   google_token_expiry TEXT,
-  updated_at TEXT
+  updated_at TEXT,
+  user_email TEXT
 )`);
+
+// Migrate existing DB that may not have user_email column
+try { sqlDb.run('ALTER TABLE auth_tokens ADD COLUMN user_email TEXT'); } catch (_) {}
 
 save();
 
