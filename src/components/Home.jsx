@@ -41,6 +41,7 @@ function EventModal({ event, onClose }) {
   // Require at least a date before allowing approval
   const effectiveDate = editing ? fields.date : event.date;
   const canApprove = !!effectiveDate?.trim();
+  const isPastDate = effectiveDate && new Date(`${effectiveDate}T00:00:00`) < new Date(new Date().toDateString());
 
   async function handleApprove() {
     if (!canApprove || approving) return;
@@ -145,6 +146,11 @@ function EventModal({ event, onClose }) {
                   {formatDate(event.date)}{event.time ? ` · ${event.time}` : ''}
                 </div>
               )}
+              {isPastDate && !editing && (
+                <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                  ⚠️ This date is in the past — check the year before approving. Tap Edit to fix it.
+                </div>
+              )}
               {event.location && (
                 <div className="flex items-start gap-2 text-sm text-gray-600">
                   <MapPin size={14} className="text-gray-400 mt-0.5 shrink-0" />
@@ -164,9 +170,9 @@ function EventModal({ event, onClose }) {
         {/* Calendar sync success */}
         {calLink && (
           <div className="mx-5 mb-3 p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 leading-relaxed">
-            ✅ Added to Google Calendar!
+            ✅ Added to Google Calendar on {formatDate(event.date)}{event.time ? ` at ${event.time}` : ''}.
             <a href={calLink} target="_blank" rel="noreferrer" className="block mt-1.5 font-semibold text-violet-600 underline">
-              View event in Google Calendar →
+              Open in Google Calendar →
             </a>
             <button onClick={onClose} className="block mt-1.5 text-gray-500 underline">Close</button>
           </div>
